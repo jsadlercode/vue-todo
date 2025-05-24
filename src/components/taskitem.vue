@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 const props = defineProps({
     id: {
         type: Number,
@@ -22,22 +23,63 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['editTask', 'deleteTask']);
+const emit = defineEmits(['editTask', 'deleteTask', 'dropOnItem']);
 
-const onEditClick = () => {
-    emit('editTask', props.id);
-    console.log('Emitting editTask with id:', props.id);
+const onEditClick = () => emit('editTask', props.id);
+const onDeleteClick = () => emit('deleteTask', props.id);
+
+// Drag and drop functionality
+const isDragOver = ref(false);
+const dropPositionIndicator = ref<'top' | 'bottom' | null>(null);
+const handleDragEnter = (event: DragEvent) => {
+    if (event.dataTransfer?.types.includes('itemid')) {
+        isDragOver.value = true;
+    }
 };
 
-const onDeleteClick = () => {
-    emit('deleteTask', props.id);
-    console.log('Emitting deleteTask with id:', props.id);
+const handleDragOver = (event: DragEvent) => {
+    if (!isDragOver.value) return;
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'move';
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const mouseY = event.clientY;
+    const midY = rect.top + rect.height / 2;
+    if (mouseY < midY) {
+        dropPositionIndicator.value = 'top';
+    } else {
+        dropPositionIndicator.value = 'bottom';
+    }
+};
+
+const handleDragLeave = () => {
+    isDragOver.value = false;
+    dropPositionIndicator.value = null;
+};
+
+const handleDrop = (event: DragEvent) => {
+    event.preventDefault(); // Prevent default action (e.g., opening as link)
+    event.stopPropagation(); // Important: Prevent event from bubbling to parent list's drop handler
+
+    const draggedItemIdStr = event.dataTransfer?.getData('itemID');
+    if (draggedItemIdStr) {
+        const draggedItemId = parseInt(draggedItemIdStr);
+        if (draggedItemId !== props.id) { // Don't allow dropping item on itself in a meaningful way here
+            emit('dropOnItem', {
+                draggedItemId: draggedItemId,
+                targetItemId: props.id,
+                position: dropPositionIndicator.value || 'bottom' // Default to bottom if somehow null
+            });
+        }
+    }
+    isDragOver.value = false;
+    dropPositionIndicator.value = null;
 };
 
 </script>
 
 <template>
-    <div class="card bg-base-100 w-80 card-xs shadow-sm" :class="{ 'opacity-30': done }" draggable="true">
+    <div class="card bg-base-100 w-80 card-xs shadow-sm" :class="{ 'opacity-30': done }" draggable="true"
+        @dragenter="handleDragEnter" @dragover="handleDragOver" @dragleave="handleDragLeave" @drop="handleDrop">
         <button class="btn btn-xs btn-square btn-primary absolute top-2 right-9 z-10" @click="onEditClick">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="size-6">

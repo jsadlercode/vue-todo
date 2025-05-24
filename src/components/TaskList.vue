@@ -2,13 +2,24 @@
 import taskItem from './taskitem.vue';
 import { ref, nextTick } from 'vue';
 
-const lists = ref([
+interface Task {
+    id: number;
+    title: string;
+    description: string;
+    listId: number;
+}
+interface List {
+    id: number;
+    name: string;
+}
+
+const lists = ref<List[]>([
     { id: 1, name: 'To Do' },
     { id: 2, name: 'Doing' },
     { id: 3, name: 'Done' },
 ]);
 
-const tasks = ref([
+const tasks = ref<Task[]>([
     {
         id: 1,
         title: 'Task 1',
@@ -80,18 +91,85 @@ const addNewTask = () => {
     console.log('Added new task:', newTask);
 }
 
-const onDrop = (event: DragEvent, targetListId: number) => {
-    console.log('dropped on list', targetListId);
+const onDropOnList = (event: DragEvent, targetListId: number) => {
+    console.log('dropped on list container', targetListId);
     event.preventDefault();
     if (event.dataTransfer) {
-        const itemID = event.dataTransfer.getData('itemID');
-        const item = tasks.value.find(task => task.id === parseInt(itemID));
-        if (item) {
-            item.listId = targetListId;
-            console.log('Dropped', item);
+        const itemIDStr = event.dataTransfer.getData('itemID');
+        if (!itemIDStr) return;
+
+        const draggedItemId = parseInt(itemIDStr);
+        const tasksArray = tasks.value;
+        const draggedItemIndex = tasksArray.findIndex(task => task.id === draggedItemId);
+
+        if (draggedItemIndex !== -1) {
+            // Check if the drop target is actually a task item child; if so, let taskItem handle it.
+            // This can happen if dragleave from item fires late or drop on padding.
+            if ((event.target as HTMLElement).closest('.drag-el > div')) { // .drag-el is parent, div is card
+                console.log("Dropped on list, but likely over an item. Item should handle.");
+                return;
+            }
+
+            const [draggedItem] = tasksArray.splice(draggedItemIndex, 1); // Remove from old position
+            draggedItem.listId = targetListId; // Update listId
+
+            // Find the index of the last task belonging to targetListId to append after it
+            let lastIndexOfTargetList = -1;
+            for (let i = tasksArray.length - 1; i >= 0; i--) {
+                if (tasksArray[i].listId === targetListId) {
+                    lastIndexOfTargetList = i;
+                    break;
+                }
+            }
+
+            if (lastIndexOfTargetList !== -1) {
+                tasksArray.splice(lastIndexOfTargetList + 1, 0, draggedItem);
+            } else {
+                // If the target list is empty, just add it.
+                // It will be the first (and only) item for that listId.
+                tasksArray.push(draggedItem);
+            }
+            console.log('Item moved to end of list:', draggedItem);
         }
     }
+};
 
+const handleDropOnTaskItem = (payload: { draggedItemId: number; targetItemId: number; position: 'top' | 'bottom' }) => {
+    const { draggedItemId, targetItemId, position } = payload;
+    console.log(`Drop on item: dragged ${draggedItemId} onto ${targetItemId} at ${position}`);
+
+    const tasksArray = tasks.value;
+    const draggedItemIndex = tasksArray.findIndex(t => t.id === draggedItemId);
+    const targetItemIndex = tasksArray.findIndex(t => t.id === targetItemId);
+
+    if (draggedItemIndex === -1 || targetItemIndex === -1) {
+        console.error('Dragged or target item not found in tasks array');
+        return;
+    }
+
+    // 1. Remove the dragged item from its current position
+    const [draggedItem] = tasksArray.splice(draggedItemIndex, 1);
+
+    // 2. Update its listId to that of the target item's list
+    // Need to find the target item again as its index might have changed after splice
+    const currentTargetItem = tasks.value.find(t => t.id === targetItemId);
+    if (!currentTargetItem) { // Should not happen
+        tasksArray.splice(draggedItemIndex, 0, draggedItem); // Put it back
+        return;
+    }
+    draggedItem.listId = currentTargetItem.listId;
+
+
+    // 3. Find the new index of the target item (it might have shifted if dragged item was before it)
+    const newTargetItemIndex = tasksArray.findIndex(t => t.id === targetItemId);
+
+    // 4. Insert the dragged item at the correct new position
+    if (position === 'top') {
+        tasksArray.splice(newTargetItemIndex, 0, draggedItem);
+    } else { // 'bottom'
+        tasksArray.splice(newTargetItemIndex + 1, 0, draggedItem);
+    }
+    console.log('Tasks reordered:', tasks.value);
 };
 
 const isDoneList = (listId: number) => {
@@ -169,13 +247,26 @@ const deleteTask = (taskIdToDelete: number) => {
         </div>
         <div class="flex gap-2">
             <div v-for="list in lists" :key="list.id"
-                class="drop-zone min-h-100 flex-1 max-w-96 bg-base-200 p-4 rounded-lg" @drop="onDrop($event, list.id)"
-                @dragenter.prevent @dragover.prevent>
+                class="drop-zone min-h-100 flex-1 max-w-96 bg-base-200 p-4 rounded-lg"
+                @drop="onDropOnList($event, list.id)" @dragenter.prevent @dragover.prevent>
                 <h2 class="text-center">{{ list.name }}</h2>
-                <div v-for="item, index in getTasksForList(list.id)" :key="item.id" :item="item" class="drag-el p-2">
-                    <taskItem :title="item.title" :description="item.description" :index="index" :id="item.id" draggable="true"
-                        @dragstart="startDrag($event, item)" :done="isDoneList(list.id)" @editTask="openEditModal" @deleteTask="deleteTask" />
+                <div class="space-y-3">
+                    <div v-for="item, index in getTasksForList(list.id)" :key="item.id" :item="item"
+                        class="drag-el p-2">
+                        <taskItem 
+                        :title="item.title" 
+                        :description="item.description" 
+                        :index="index" 
+                        :id="item.id"
+                        draggable="true" 
+                        @dragstart="startDrag($event, item)" 
+                        :done="isDoneList(list.id)"
+                        @editTask="openEditModal" 
+                        @deleteTask="deleteTask"
+                        @dropOnItem="handleDropOnTaskItem" />
+                    </div>
                 </div>
+
             </div>
         </div>
         <!-- Modal -->
