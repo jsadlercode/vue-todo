@@ -22,7 +22,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['editTask, deleteTask']);
+const emit = defineEmits(['editTask', 'deleteTask']);
 
 const onEditClick = () => {
     emit('editTask', props.id);
