@@ -75,7 +75,11 @@ const onDrop = (event, list) => {
             @dragover.prevent>
             <h2 class="text-center">To Do</h2>
                 <div v-for="item in getList(1)" :key="item.id" class="drag-e p-2">
-                    <taskItem :title="item.title" :description="item.description" draggable="true" @dragstart="startDrag($event, item)" />
+                    <taskItem 
+                    :title="item.title" 
+                    :description="item.description" 
+                    draggable="true" 
+                    @dragstart="startDrag($event, item)" />
                 </div>
 
             </div>
@@ -85,7 +89,11 @@ const onDrop = (event, list) => {
             @dragover.prevent>
             <h2 class="text-center">Doing</h2>
                 <div v-for="item in getList(2)" :key="item.id" class="drag-el p-2">
-                    <taskItem :title="item.title" :description="item.description" draggable="true" @dragstart="startDrag($event, item)"/>
+                    <taskItem 
+                    :title="item.title" 
+                    :description="item.description" 
+                    draggable="true" 
+                    @dragstart="startDrag($event, item)"/>
                 </div>
             </div>
             <div class="drop-zone min-h-100 flex-1 max-w-96 bg-base-200 p-4 rounded-lg" 
@@ -94,7 +102,12 @@ const onDrop = (event, list) => {
             @dragover.prevent>
             <h2 class="text-center">Done</h2>
                 <div v-for="item in getList(3)" :key="item.id" class="drag-e p-2">
-                    <taskItem :title="item.title" :description="item.description" draggable="true" @dragstart="startDrag($event, item)" />
+                    <taskItem 
+                    :title="item.title" 
+                    :description="item.description" 
+                    draggable="true" 
+                    @dragstart="startDrag($event, item)"
+                    :done="true" />
                 </div>
 
             </div>

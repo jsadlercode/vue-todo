@@ -1,3 +1,5 @@
 @import './base.css';
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+    themes: dark --default, cupcake, sunset, business
+}
