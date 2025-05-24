@@ -9,7 +9,7 @@ This template should help get you started developing with Vue 3 in Vite.
 * [x] Scaffold tasks
 * [x] add drag and drop
 * [x] Scaffold board
-* [ ] Add New Task
+* [x] Add New Task
 * [x] Move to Done changes styling
-* [ ] Add New Task
+* [ ] Edit Tasks
 * [ ] save
