@@ -7,6 +7,6 @@ This template should help get you started developing with Vue 3 in Vite.
 * [x] Setup Git
 * [x] Tailwind and DaisyUI
 * [x] Scaffold tasks
-* [ ] add drag and drop
-* [ ] Scaffold board
+* [x] add drag and drop
+* [x] Scaffold board
 * [ ] save

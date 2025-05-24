@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import taskItem from './components/taskitem.vue';
+
+import TaskList from './components/TaskList.vue'
+
+
 
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col">
     <div class="">
       <h1 class="text-3xl font-bold">Vue To-Do</h1>
     </div>
-    <div class="todo-container p-8">
-      <taskItem />
+    <div class="todo-container p-8 mx-auto">
+      <TaskList class=""/>
     </div>
   </div>
 
