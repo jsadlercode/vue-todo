@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import taskItem from './taskitem.vue';
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 
 const lists = ref([
     { id: 1, name: 'To Do' },
@@ -94,6 +94,52 @@ const onDrop = (event: DragEvent, targetListId: number) => {
 const isDoneList = (listId: number) => {
     return listId === 3;
 }
+// --- Modal Logic ---
+
+const taskDialogRef = ref<HTMLDialogElement | null>(null);
+const isModalVisible = ref(false);
+const taskToEdit = ref<null | { id: number, title: string, description: string }>(null);
+
+const openEditModal = async (taskId: number) => {
+    console.log('Opening edit modal for task ID:', taskId);
+    const foundTask = tasks.value.find(task => task.id === taskId);
+    if (foundTask) {
+        taskToEdit.value = { ...foundTask };
+        isModalVisible.value = true;
+        console.log('Modal visible: ', isModalVisible.value);
+
+        await nextTick();
+        if (taskDialogRef.value) {
+            console.log('Dialog element found, calling showModal');
+            taskDialogRef.value.showModal();
+        } else {
+            console.error('Dialog element not found');
+        }
+    }
+};
+
+const closeEditModal = () => {
+    console.log('Closing edit modal');
+    if (taskDialogRef.value && taskDialogRef.value.hasAttribute('open')) {
+        taskDialogRef.value.close();
+    }
+    isModalVisible.value = false;
+    taskToEdit.value = null;
+    console.log('Modal visible state set to: ', isModalVisible.value);
+};
+
+const saveTask = () => {
+    if (taskToEdit.value) {
+        const taskIndex = tasks.value.findIndex(task => task.id === taskToEdit.value!.id);
+        if (taskIndex !== -1) {
+            tasks.value[taskIndex] = { ...taskToEdit.value };
+        }
+        closeEditModal();
+    }
+}
+
+
+
 
 </script>
 
@@ -113,12 +159,35 @@ const isDoneList = (listId: number) => {
                 @dragenter.prevent @dragover.prevent>
                 <h2 class="text-center">{{ list.name }}</h2>
                 <div v-for="item in getTasksForList(list.id)" :key="item.id" class="drag-el p-2">
-                    <taskItem :title="item.title" :description="item.description" draggable="true"
-                        @dragstart="startDrag($event, item)" :done="isDoneList(list.id)" />
+                    <taskItem :title="item.title" :description="item.description" :id="item.id" draggable="true"
+                        @dragstart="startDrag($event, item)" :done="isDoneList(list.id)" @editTask="openEditModal" />
                 </div>
-
             </div>
-
         </div>
+        <!-- Modal -->
+
+        <dialog id="task_model" class="modal" ref="taskDialogRef" v-if="isModalVisible && taskToEdit">
+            <div class="modal-box">
+                <div class="mb-4">
+                    <label for="editTitle" class="block text-sm font-medium text-gray-700">Title</label>
+                    <input type="text" id="editTitle" v-model="taskToEdit.title"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                <div class="mb-6">
+                    <label for="editDescription" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="editDescription" v-model="taskToEdit.description" rows="3"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                </div>
+                <div class="modal-action">
+                    <button @click="closeEditModal" class="btn btn-ghost">Cancel</button>
+                    <button @click="saveTask" class="btn btn-primary">Save Changes</button>
+                </div>
+                <p class="py-4">Press ESC key or click outside to close</p>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+                <button>Close</button>
+            </form>
+        </dialog>
+
     </div>
 </template>
