@@ -62,10 +62,13 @@ const startDrag = (event: DragEvent, item) => {
     }
 };
 
+const lastId = ref(tasks.value.length > 0 ? Math.max(...tasks.value.map(t => t.id)) : 0);
+
 const addNewTask = () => {
     if (newTaskTitle.value.trim() === '') {
         return;
     }
+    lastId.value++;
     const newTask = {
         id: tasks.value.length + 1,
         title: newTaskTitle.value,
@@ -138,7 +141,18 @@ const saveTask = () => {
     }
 }
 
+// End of Modal Logic
+const deleteTask = (taskIdToDelete: number) => {
+    console.log('Attempting to delete task with ID:', taskIdToDelete);
+    const indexToDelete = tasks.value.findIndex(task => task.id === taskIdToDelete);
 
+    if (indexToDelete !== -1) {
+        tasks.value.splice(indexToDelete, 1);
+        console.log('Task deleted successfully:', taskIdToDelete);
+    } else {
+        console.warn('Task not found for deletion:', taskIdToDelete);
+    }
+};
 
 
 </script>
@@ -158,9 +172,9 @@ const saveTask = () => {
                 class="drop-zone min-h-100 flex-1 max-w-96 bg-base-200 p-4 rounded-lg" @drop="onDrop($event, list.id)"
                 @dragenter.prevent @dragover.prevent>
                 <h2 class="text-center">{{ list.name }}</h2>
-                <div v-for="item in getTasksForList(list.id)" :key="item.id" class="drag-el p-2">
-                    <taskItem :title="item.title" :description="item.description" :id="item.id" draggable="true"
-                        @dragstart="startDrag($event, item)" :done="isDoneList(list.id)" @editTask="openEditModal" />
+                <div v-for="item, index in getTasksForList(list.id)" :key="item.id" :item="item" class="drag-el p-2">
+                    <taskItem :title="item.title" :description="item.description" :index="index" :id="item.id" draggable="true"
+                        @dragstart="startDrag($event, item)" :done="isDoneList(list.id)" @editTask="openEditModal" @deleteTask="deleteTask" />
                 </div>
             </div>
         </div>

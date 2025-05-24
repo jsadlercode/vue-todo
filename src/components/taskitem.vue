@@ -15,14 +15,23 @@ const props = defineProps({
     done: {
         type: Boolean,
         default: false
+    },
+    index: {
+        type: Number,
+        required: true
     }
 })
 
-const emit = defineEmits(['editTask']);
+const emit = defineEmits(['editTask, deleteTask']);
 
 const onEditClick = () => {
     emit('editTask', props.id);
     console.log('Emitting editTask with id:', props.id);
+};
+
+const onDeleteClick = () => {
+    emit('deleteTask', props.id);
+    console.log('Emitting deleteTask with id:', props.id);
 };
 
 </script>
@@ -37,7 +46,7 @@ const onEditClick = () => {
             </svg>
         </button>
 
-        <button class="btn btn-xs btn-square btn-primary absolute top-2 right-2 z-10">X</button>
+        <button class="btn btn-xs btn-square btn-primary absolute top-2 right-2 z-10" @click="onDeleteClick">X</button>
         <div class="card-body bg-primary rounded-lg">
             <h2 class="card-title" :class="{ 'line-through': done }">
                 {{ title }}
